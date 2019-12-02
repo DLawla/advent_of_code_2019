@@ -108,10 +108,26 @@ inputs = [
 def calculate_fuel(mass):
     return math.floor(mass / 3) - 2
 
+# Calculate total, excluding the weight of the fuel
 total_fuel = 0
 for x in inputs:
     total_fuel = total_fuel + calculate_fuel(x)
-# total_fuel = functools.reduce(lambda x, y : x + calculate_fuel(y), inputs)
+print("Calculated fuel (w/o weight of fuel:")
+print(total_fuel)
 
-print("Calculated fuel:")
+# Calculate total, w/ the weight of the fuel
+total_fuel = 0
+for x in inputs:
+    last_fuel_weight = calculate_fuel(x)
+    running_fuel_weight = last_fuel_weight
+
+    while True:
+        last_fuel_weight = max(0, calculate_fuel(last_fuel_weight))
+        running_fuel_weight = running_fuel_weight + last_fuel_weight
+        if last_fuel_weight == 0:
+            break
+
+    total_fuel = total_fuel + running_fuel_weight
+
+print("Calculated fuel (w/ weight of fuel:")
 print(total_fuel)
