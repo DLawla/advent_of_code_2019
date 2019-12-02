@@ -7,7 +7,7 @@ verify_ssl = true
 
 [packages]
 #matplotlib = "*"
-#numpy = "*"
+numpy = "*"
 #h5py = "*"
 #scipy = "*"
 #pillow = "*"
