@@ -7,7 +7,7 @@ input2 = ['L998', 'U258', 'R975', 'U197', 'R680', 'D56', 'R898', 'D710', 'R475',
 # with the coordinate arrays, find the intersection points
 # calculate the distance to each intersection, and return the smallest
 
-def coordinates_of_movement(starting_coordinates, movement):
+def perform_movement(starting_coordinates, movement):
     direction = movement[0]
     movement_steps = int(movement[1:])
     starting_x = starting_coordinates[0]
@@ -28,7 +28,7 @@ def coordinates_of_movement(starting_coordinates, movement):
         else:
             print('Invalid movement direction!')
 
-    return  new_coordinates
+    return  { 'coordinates': new_coordinates, 'steps_performed': range(1, movement_steps) }
 
 def multidim_intersect(array_1, array_2):
     array_1_view = array_1.view([('',array_1.dtype)]*array_1.shape[1])
@@ -60,18 +60,45 @@ def shortest_distance_from_origin(coordinates):
         distances += [abs(coordinate[0]) + abs(coordinate[1])]
     return min(distances)
 
+def shortest_distance_traveled(paths_coordinates, paths_traveled_steps, intersections):
+    distances_to_intersections = []
+    for intersection in intersections:
+        intersection = intersection.tolist()
+        if intersection == [0, 0]:
+            continue
+        distance_to_intersection = 0
+        distance_to_intersection += paths_traveled_steps[0][paths_coordinates[0]].index(intersection)
+        distance_to_intersection += paths_traveled_steps[1][paths_coordinates[1]].index(intersection)
+        distances_to_intersections += [distance_to_intersection]
+
+    return min(distances_to_intersections)
+
 paths = [input1, input2]
 paths_coordinates = []
+paths_traveled_steps = []
 for path in paths:
     path_coordinates = [[0, 0]]
+    traveled_distance = [0]
 
     for movement in path:
         starting_coordinates = path_coordinates[-1]
-        path_coordinates += coordinates_of_movement(starting_coordinates, movement)
+        movement_results = perform_movement(starting_coordinates, movement)
+        path_coordinates += movement_results['coordinates']
+
+        # TODO fix now that this is an array
+
+        traveled_distance += [traveled_distance[-1] + movement_results['steps_performed']]
 
     paths_coordinates += [path_coordinates]
+    paths_traveled_steps += [traveled_distance]
 
 intersections = intersections_of_paths(paths_coordinates)
 print(f'Intersections ({len(intersections)}):')
 print(intersections)
-print(f'Closest intersection distance: {shortest_distance_from_origin(intersections)}')
+print(paths_traveled_steps)
+
+# Solution for challenge 1:
+# print(f'Closest intersection distance: {shortest_distance_from_origin(intersections)}')
+
+# Solution for challenge 2:
+print(f'Closest travel path intersection distance: {shortest_distance_traveled(paths_coordinates, paths_traveled_steps, intersections)}')
