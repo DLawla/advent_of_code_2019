@@ -55,7 +55,8 @@ for input in inputs:
 
 
 # Challenge 1
-# print(sum([node.number_of_orbits() for node in nodes]))
+print(f'Number of orbits: {sum([node.number_of_orbits() for node in nodes])}')
+# answer: 234446
 
 # Challenge 2
 my_node = find_or_create_node('YOU')
@@ -82,4 +83,4 @@ santa_distance_to_first_matching_orbit = santa_orbital_parents.index(first_match
 # print(santa_orbital_parents)
 # print(first_matching_orbit)
 print(f'Total distance: {my_distance_to_first_matching_orbit + santa_distance_to_first_matching_orbit}')
-
+# answer: 385
