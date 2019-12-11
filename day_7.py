@@ -32,7 +32,6 @@ class AmplifierIntcode():
         return [opcode, parameter1Mode, parameter2Mode, parameter3Mode]
 
 
-
     def run(self):
         output = None
 
@@ -147,44 +146,42 @@ print(f'output: {max_output}')
 # Answer: 212460
 
 # Challenge 2 solution
-# TODO, need to refactor the int_program to a class that can be stored as an object and can stop then continue,
-# store current pointer index, store current program, etc
+def all_feedback_mode_phase_settings():
+    all = [i for i in range(55555, 99999)]
+    return [str(i).zfill(5) for i in all if ''.join(sorted(list(str(i).zfill(5)))) == '56789' ]
 
-# def all_feedback_mode_phase_settings():
-#     all = [i for i in range(55555, 99999)]
-#     return [str(i).zfill(5) for i in all if ''.join(sorted(list(str(i).zfill(5)))) == '56789' ]
-#
-#
-# program = [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
-# max_output = 0
-# max_output_phase_settings = None
-# for phase_settings in all_feedback_mode_phase_settings():
-#     input = 0
-#     output = 0
-#
-#     while True:
-#         program_copies = [program.copy(), program.copy(), program.copy(), program.copy(), program.copy()]
-#         program_pointers = [0, 0, 0, 0, 0]
-#         for i in range(len(phase_settings)):
-#             output, current_program, current_pointer, halted = run_amplifier_intcode(program_copies[i], input, int(phase_settings[i]), program_pointers[i])
-#             print(i)
-#             print(current_pointer)
-#             print(halted)
-#
-#             program_copies[i] = current_program
-#             program_pointers[i] = current_pointer
-#             input = output
-#
-#
-#             if halted and i == 4:
-#                 break
-#
-#     print(output)
-#
-#     if output > max_output:
-#         max_output = output
-#         max_output_phase_settings = phase_settings
-#
-# print('Solution for feedback mode:')
-# print(f'Phase settings: {max_output_phase_settings}')
-# print(f'output: {max_output}')
+
+program = [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
+max_output = 0
+max_output_phase_settings = None
+for phase_settings in all_feedback_mode_phase_settings():
+    output = 0
+
+    while True:
+        amplifier_programs = [
+            AmplifierIntcode(program.copy(), 0, int(phase_settings[0])),
+            AmplifierIntcode(program.copy(), 0, int(phase_settings[1])),
+            AmplifierIntcode(program.copy(), 0, int(phase_settings[2])),
+            AmplifierIntcode(program.copy(), 0, int(phase_settings[3])),
+            AmplifierIntcode(program.copy(), 0, int(phase_settings[4])),
+        ]
+
+        for i in range(len(phase_settings)):
+            amplifier = amplifier_programs[i]
+            amplifier.input = output
+            output = amplifier.run()
+            print(i)
+            print(amplifier.i)
+
+            if amplifier.halted and i == 4:
+                break
+
+    print(output)
+
+    if output > max_output:
+        max_output = output
+        max_output_phase_settings = phase_settings
+
+print('Solution for feedback mode:')
+print(f'Phase settings: {max_output_phase_settings}')
+print(f'output: {max_output}')
