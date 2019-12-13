@@ -42,10 +42,3 @@ print(running_image)
 
 for row_index in range(pixels_tall):
     print(''.join([str(running_image[i]) + ' ' for i in range(row_index * pixels_wide, (row_index + 1) * pixels_wide)]))
-
-
-
-
-
-
-
