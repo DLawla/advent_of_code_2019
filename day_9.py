@@ -8,25 +8,40 @@ class Intcode():
         self.relative_base = 0
         self.halted = False
 
-
-    def parameter_value(self, parameter, mode):
+    def read_parameter_value(self, parameter, mode):
         # position mode
         if mode == 0:
-            return self.program[parameter]
+            index = parameter
+            self.expand_memory_space(index)
+            return self.program[index]
         # immediate mode
         elif mode == 1:
             return parameter
         # relative mode
         elif mode == 2:
-            return self.program[self.relative_base + parameter]
+            index = self.relative_base + parameter
+            self.expand_memory_space(index)
+            return self.program[index]
         else:
             print('Invalid parameter value')
 
+    def write_parameter_address(self, parameter, mode):
+        # position mode
+        if mode == 0:
+            index = parameter
+            self.expand_memory_space(index)
+            return index
+        # relative mode
+        elif mode == 2:
+            index = self.relative_base + parameter
+            self.expand_memory_space(index)
+            return index
+        else:
+            print('Invalid parameter value')
 
     def opcode_setting(self):
         opcode_setting_string = str(self.program[self.i])
         return opcode_setting_string.zfill(5)
-
 
     def opcode_and_parameter_modes(self, parameters):
         opcode = int(''.join([parameters[3], parameters[4]]))
@@ -59,66 +74,71 @@ class Intcode():
                 parameter3 = int(self.program[self.i + 3])
 
             if opcode == 1:  # addition
-                value1 = self.parameter_value(parameter1, parameter1Mode)
-                value2 = self.parameter_value(parameter2, parameter2Mode)
-                self.assign_to_address(parameter3, value1 + value2)
+                value1 = self.read_parameter_value(parameter1, parameter1Mode)
+                value2 = self.read_parameter_value(parameter2, parameter2Mode)
+                destination_address = self.write_parameter_address(parameter3, parameter3Mode)
+                self.assign_to_address(destination_address, value1 + value2)
                 self.i += 4
 
             elif opcode == 2:  # multiplication
-                value1 = self.parameter_value(parameter1, parameter1Mode)
-                value2 = self.parameter_value(parameter2, parameter2Mode)
-                self.assign_to_address(parameter3, value1 * value2)
+                value1 = self.read_parameter_value(parameter1, parameter1Mode)
+                value2 = self.read_parameter_value(parameter2, parameter2Mode)
+                destination_address = self.write_parameter_address(parameter3, parameter3Mode)
+                self.assign_to_address(destination_address, value1 * value2)
                 self.i += 4
 
             elif opcode == 3:  # takes input and saves to parameter address
                 if self.input is None:
                     break
-                self.assign_to_address(parameter1, self.input)
+                destination_address = self.write_parameter_address(parameter1, parameter1Mode)
+                self.assign_to_address(destination_address, self.input)
                 self.input = None
                 self.i += 2
 
             elif opcode == 4:  # outputs the value of the parameter, stops program
-                value1 = self.parameter_value(parameter1, parameter1Mode)
+                value1 = self.read_parameter_value(parameter1, parameter1Mode)
                 output = value1  # does an output
                 self.i += 2
                 break
 
             elif opcode == 5:  # jump if true
-                value1 = self.parameter_value(parameter1, parameter1Mode)
-                value2 = self.parameter_value(parameter2, parameter2Mode)
+                value1 = self.read_parameter_value(parameter1, parameter1Mode)
+                value2 = self.read_parameter_value(parameter2, parameter2Mode)
                 if value1 != 0:
                     self.i = value2
                 else:
                     self.i += 3
 
             elif opcode == 6:  # jump if false
-                value1 = self.parameter_value(parameter1, parameter1Mode)
-                value2 = self.parameter_value(parameter2, parameter2Mode)
+                value1 = self.read_parameter_value(parameter1, parameter1Mode)
+                value2 = self.read_parameter_value(parameter2, parameter2Mode)
                 if value1 == 0:
                     self.i = value2
                 else:
                     self.i += 3
 
             elif opcode == 7:  # less than
-                value1 = self.parameter_value(parameter1, parameter1Mode)
-                value2 = self.parameter_value(parameter2, parameter2Mode)
+                value1 = self.read_parameter_value(parameter1, parameter1Mode)
+                value2 = self.read_parameter_value(parameter2, parameter2Mode)
+                destination_address = self.write_parameter_address(parameter3, parameter3Mode)
                 if value1 < value2:
-                    self.assign_to_address(parameter3, 1)
+                    self.assign_to_address(destination_address, 1)
                 else:
-                    self.assign_to_address(parameter3, 0)
+                    self.assign_to_address(destination_address, 0)
                 self.i += 4
 
-            elif opcode == 8:  # less than
-                value1 = self.parameter_value(parameter1, parameter1Mode)
-                value2 = self.parameter_value(parameter2, parameter2Mode)
+            elif opcode == 8:  # equal to
+                value1 = self.read_parameter_value(parameter1, parameter1Mode)
+                value2 = self.read_parameter_value(parameter2, parameter2Mode)
+                destination_address = self.write_parameter_address(parameter3, parameter3Mode)
                 if value1 == value2:
-                    self.assign_to_address(parameter3, 1)
+                    self.assign_to_address(destination_address, 1)
                 else:
-                    self.assign_to_address(parameter3, 0)
+                    self.assign_to_address(destination_address, 0)
                 self.i += 4
 
-            elif opcode == 9:  # less than
-                self.relative_base += parameter1
+            elif opcode == 9:  # relative base adjustment
+                self.relative_base += self.read_parameter_value(parameter1, parameter1Mode)
                 self.i += 2
 
             elif opcode == 99:
@@ -127,14 +147,21 @@ class Intcode():
                 break
 
             else:
-                print(f'Invalid opcode at {i}')
+                print(f'Invalid opcode at {self.i}')
                 break
 
         return output
 
 
-intcode = Intcode(program.copy(), 1)
-output = intcode.run()
+intcode = Intcode(program.copy(), 2)
 
-print(intcode.program)
-print(output)
+done = False
+outputs = []
+while not done:
+    output = intcode.run()
+    outputs += [output]
+
+    if intcode.halted:
+        done = True
+
+print(outputs)
