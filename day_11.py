@@ -10,7 +10,7 @@ class PrintColors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-class Intcode():
+class Intcode:
     def __init__(self, program, input):
         self.i = 0
         self.program = program.copy()
@@ -162,7 +162,7 @@ class Intcode():
 
         return output
 
-class Robot():
+class Robot:
     def __init__(self, program):
         self.coordinates = [0, 0]
         self.visited_coordinates_information = []
