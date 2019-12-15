@@ -239,17 +239,25 @@ all_y_coordinates = []
 for visited_coordinate_info in robot.visited_coordinates_information:
     all_x_coordinates += [visited_coordinate_info['coordinates'][0]]
     all_y_coordinates += [visited_coordinate_info['coordinates'][1]]
-print(min(all_x_coordinates))
-print(max(all_x_coordinates))
-print(min(all_y_coordinates))
-print(max(all_y_coordinates))
+x_offset = abs(min(all_x_coordinates))
+y_offset = abs(min(all_y_coordinates))
 
+row_count = max(all_y_coordinates) - min(all_y_coordinates) + 1
+width = max(all_x_coordinates) - min(all_x_coordinates) + 1
+
+# init panels for painting
 panels = []
-for row in range(min(all_y_coordinates), max(all_y_coordinates)):
+for i in range(row_count):
+    panels.append([f"{PrintColors.OKGREEN}█"] * width)
 
-    for x in range(min(all_x_coordinates), max(all_x_coordinates)):
-        panels[x][y] = "{PrintColors.OKGREEN}█"
-print(panels)
+# paint panels
+for visited_coordinate_info in robot.visited_coordinates_information:
+    if visited_coordinate_info['color'] == 1:
+        color = f"{PrintColors.FAIL}█"
+    else:
+        color = f"{PrintColors.OKGREEN}█"
+    panels[visited_coordinate_info['coordinates'][1] + y_offset][visited_coordinate_info['coordinates'][0] + x_offset] = color
 
-# print(f"{PrintColors.OKGREEN}█")
-# print(f"{PrintColors.FAIL}█")
+# Prints answer reflected over x axis
+for row in panels:
+    print(''.join(row))
