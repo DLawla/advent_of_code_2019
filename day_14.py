@@ -64,7 +64,9 @@ class Reactor:
         self.ore_sourced_reactions = [reaction for reaction in self.reactions if reaction.reactants[0]['element'] == 'ORE']
         self.ore_sourced_elements = list(map(lambda x: x.products[0]['element'], self.ore_sourced_reactions))
 
+        # initialize the constituents, these will be refined down into respective reactants
         self.constituents = fuel_producing_reaction.reactants
+
         # Refine until finding all constituents that are directly sourced from fuel
         while True:
             new_constituents = []
@@ -79,30 +81,13 @@ class Reactor:
 
         return self.ore_to_produce_ore_based_constituents()
 
-    def no_non_ore_sourced_constituents(self):
-        non_ore_sourced_constituents = [constituent for constituent in self.constituents if
-                                        constituent['element'] not in self.ore_sourced_elements]
-        return non_ore_sourced_constituents.__len__() == 0
-
-    def combine_like_constituents(self):
-        unique_elemements = set(list(map(lambda x: x['element'], self.constituents)))
-        combined_constituents = []
-        for unique_elemement in unique_elemements:
-            matching_constituent_amounts = [constituent['amount'] for constituent in self.constituents if
-                                            constituent['element'] == unique_elemement]
-            total_element_count = sum(matching_constituent_amounts)
-            combined_constituents.append({'element': unique_elemement, 'amount': total_element_count})
-        self.constituents = combined_constituents
-
     def ore_to_produce_ore_based_constituents(self):
         ore = 0
         for constituent in self.constituents:
             matching_ore_reaction = next(reaction for reaction in self.ore_sourced_reactions if reaction.products[0]['element'] == constituent['element'])
             times_to_run_reaction = self.times_to_run_reaction(matching_ore_reaction, constituent['amount'])
             ore += matching_ore_reaction.reactants[0]['amount'] * times_to_run_reaction
-
         return ore
-
 
     def constituents_of(self, constituent):
         amount = constituent['amount']
@@ -119,6 +104,21 @@ class Reactor:
         for reactant in reaction_producing_element.reactants:
             constituents += [dict(reactant, amount = (reactant['amount'] * times_to_run_reaction))]
         return constituents
+
+    def combine_like_constituents(self):
+        unique_elemements = set(list(map(lambda x: x['element'], self.constituents)))
+        combined_constituents = []
+        for unique_elemement in unique_elemements:
+            matching_constituent_amounts = [constituent['amount'] for constituent in self.constituents if
+                                            constituent['element'] == unique_elemement]
+            total_element_count = sum(matching_constituent_amounts)
+            combined_constituents.append({'element': unique_elemement, 'amount': total_element_count})
+        self.constituents = combined_constituents
+
+    def no_non_ore_sourced_constituents(self):
+        non_ore_sourced_constituents = [constituent for constituent in self.constituents if
+                                        constituent['element'] not in self.ore_sourced_elements]
+        return non_ore_sourced_constituents.__len__() == 0
 
     def times_to_run_reaction(self, reaction, desired_amount):
         times_to_run_reaction = 1
