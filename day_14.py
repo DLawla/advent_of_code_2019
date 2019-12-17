@@ -53,14 +53,48 @@ class Reactor:
         self.ore_sourced_reactions = [reaction for reaction in self.reactions if reaction.reactants[0]['element'] == 'ORE']
         self.ore_sourced_elements = list(map(lambda x: x.products[0]['element'], self.ore_sourced_reactions))
 
-        constituents = []
-        for fuel_reactant in fuel_producing_reaction.reactants:
-            constituents += self.constituents_of(fuel_reactant)
-        return constituents
+        self.constituents = fuel_producing_reaction.reactants
+        # Refine until finding all constituents that are directly sourced from fuel
+        while True:
+            new_constituents = []
+            for constituent in self.constituents:
+                new_constituents += self.constituents_of(constituent)
+
+            self.constituents = copy.deepcopy(new_constituents)
+            self.combine_like_constituents()
+
+            if self.no_non_ore_sourced_constituents():
+                break
+
+        return self.ore_to_produce_ore_based_constituents()
+
+    def no_non_ore_sourced_constituents(self):
+        non_ore_sourced_constituents = [constituent for constituent in self.constituents if
+                                        constituent['element'] not in self.ore_sourced_elements]
+        return non_ore_sourced_constituents.__len__() == 0
+
+    def combine_like_constituents(self):
+        # combine all constituents w/ the same element and sum amounts
+        combined_constituents = []
+        for constituent in self.constituents:
+            # matching_constituent = next(ifilter(lambda x: , combined_constituents), None)
+
+        print('here')
+
+    def ore_to_produce_ore_based_constituents(self):
+        # combine_like_constituents
+
+        ore = 0
+        # for constituent in self.constituents:
+        #     ore += self.constituents_of(constituent)
+
 
     def constituents_of(self, constituent):
         amount = constituent['amount']
         element = constituent['element']
+
+        if element in self.ore_sourced_elements:
+            return [constituent]
 
         reaction_producing_element = copy.deepcopy(next(reaction for reaction in self.reactions if reaction.products[0]['element'] == element))
 
