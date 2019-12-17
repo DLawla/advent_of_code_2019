@@ -2,12 +2,23 @@ import re
 import copy
 
 input = """
-10 ORE => 10 A
-1 ORE => 1 B
-7 A, 1 B => 1 C
-7 A, 1 C => 1 D
-7 A, 1 D => 1 E
-7 A, 1 E => 1 FUEL
+171 ORE => 8 CNZTR
+7 ZLQW, 3 BMBT, 9 XCVML, 26 XMNCP, 1 WPTQ, 2 MZWV, 1 RJRHP => 4 PLWSL
+114 ORE => 4 BHXH
+14 VRPVC => 6 BMBT
+6 BHXH, 18 KTJDG, 12 WPTQ, 7 PLWSL, 31 FHTLT, 37 ZDVW => 1 FUEL
+6 WPTQ, 2 BMBT, 8 ZLQW, 18 KTJDG, 1 XMNCP, 6 MZWV, 1 RJRHP => 6 FHTLT
+15 XDBXC, 2 LTCX, 1 VRPVC => 6 ZLQW
+13 WPTQ, 10 LTCX, 3 RJRHP, 14 XMNCP, 2 MZWV, 1 ZLQW => 1 ZDVW
+5 BMBT => 4 WPTQ
+189 ORE => 9 KTJDG
+1 MZWV, 17 XDBXC, 3 XCVML => 2 XMNCP
+12 VRPVC, 27 CNZTR => 2 XDBXC
+15 KTJDG, 12 BHXH => 5 XCVML
+3 BHXH, 2 VRPVC => 7 MZWV
+121 ORE => 7 VRPVC
+7 XCVML => 6 RJRHP
+5 BHXH, 4 VRPVC => 5 LTCX
 """
 
 class Reaction:
@@ -74,19 +85,23 @@ class Reactor:
         return non_ore_sourced_constituents.__len__() == 0
 
     def combine_like_constituents(self):
-        # combine all constituents w/ the same element and sum amounts
+        unique_elemements = set(list(map(lambda x: x['element'], self.constituents)))
         combined_constituents = []
-        for constituent in self.constituents:
-            # matching_constituent = next(ifilter(lambda x: , combined_constituents), None)
-
-        print('here')
+        for unique_elemement in unique_elemements:
+            matching_constituent_amounts = [constituent['amount'] for constituent in self.constituents if
+                                            constituent['element'] == unique_elemement]
+            total_element_count = sum(matching_constituent_amounts)
+            combined_constituents.append({'element': unique_elemement, 'amount': total_element_count})
+        self.constituents = combined_constituents
 
     def ore_to_produce_ore_based_constituents(self):
-        # combine_like_constituents
-
         ore = 0
-        # for constituent in self.constituents:
-        #     ore += self.constituents_of(constituent)
+        for constituent in self.constituents:
+            matching_ore_reaction = next(reaction for reaction in self.ore_sourced_reactions if reaction.products[0]['element'] == constituent['element'])
+            times_to_run_reaction = self.times_to_run_reaction(matching_ore_reaction, constituent['amount'])
+            ore += matching_ore_reaction.reactants[0]['amount'] * times_to_run_reaction
+
+        return ore
 
 
     def constituents_of(self, constituent):
@@ -98,16 +113,20 @@ class Reactor:
 
         reaction_producing_element = copy.deepcopy(next(reaction for reaction in self.reactions if reaction.products[0]['element'] == element))
 
-        times_to_run_reaction = 1
-        while True:
-            if reaction_producing_element.products[0]['amount'] * times_to_run_reaction >= amount:
-                break
-            times_to_run_reaction += 1
+        times_to_run_reaction = self.times_to_run_reaction(reaction_producing_element, amount)
 
         constituents = []
         for reactant in reaction_producing_element.reactants:
             constituents += [dict(reactant, amount = (reactant['amount'] * times_to_run_reaction))]
         return constituents
+
+    def times_to_run_reaction(self, reaction, desired_amount):
+        times_to_run_reaction = 1
+        while True:
+            if reaction.products[0]['amount'] * times_to_run_reaction >= desired_amount:
+                break
+            times_to_run_reaction += 1
+        return times_to_run_reaction
 
 
 reactor = Reactor(input)
