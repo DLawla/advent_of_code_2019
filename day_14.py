@@ -2,23 +2,18 @@ import re
 import copy
 
 input = """
-171 ORE => 8 CNZTR
-7 ZLQW, 3 BMBT, 9 XCVML, 26 XMNCP, 1 WPTQ, 2 MZWV, 1 RJRHP => 4 PLWSL
-114 ORE => 4 BHXH
-14 VRPVC => 6 BMBT
-6 BHXH, 18 KTJDG, 12 WPTQ, 7 PLWSL, 31 FHTLT, 37 ZDVW => 1 FUEL
-6 WPTQ, 2 BMBT, 8 ZLQW, 18 KTJDG, 1 XMNCP, 6 MZWV, 1 RJRHP => 6 FHTLT
-15 XDBXC, 2 LTCX, 1 VRPVC => 6 ZLQW
-13 WPTQ, 10 LTCX, 3 RJRHP, 14 XMNCP, 2 MZWV, 1 ZLQW => 1 ZDVW
-5 BMBT => 4 WPTQ
-189 ORE => 9 KTJDG
-1 MZWV, 17 XDBXC, 3 XCVML => 2 XMNCP
-12 VRPVC, 27 CNZTR => 2 XDBXC
-15 KTJDG, 12 BHXH => 5 XCVML
-3 BHXH, 2 VRPVC => 7 MZWV
-121 ORE => 7 VRPVC
-7 XCVML => 6 RJRHP
-5 BHXH, 4 VRPVC => 5 LTCX
+2 VPVL, 7 FWMGM, 2 CXFTF, 11 MNCFX => 1 STKFG
+17 NVRVD, 3 JNWZP => 8 VPVL
+53 STKFG, 6 MNCFX, 46 VJHF, 81 HVMC, 68 CXFTF, 25 GNMV => 1 FUEL
+22 VJHF, 37 MNCFX => 5 FWMGM
+139 ORE => 4 NVRVD
+144 ORE => 7 JNWZP
+5 MNCFX, 7 RFSQX, 2 FWMGM, 2 VPVL, 19 CXFTF => 3 HVMC
+5 VJHF, 7 MNCFX, 9 VPVL, 37 CXFTF => 6 GNMV
+145 ORE => 6 MNCFX
+1 NVRVD => 8 CXFTF
+1 VJHF, 6 MNCFX => 4 RFSQX
+176 ORE => 6 VJHF
 """
 
 class Reaction:
@@ -70,6 +65,28 @@ class Reactor:
         # Refine until finding all constituents that are directly sourced from fuel
         while True:
             new_constituents = []
+
+            # check if there are constituents w/ both sourcing reactions that produce 1 AND others that produce multiple
+            # if this is the case, only derive constituents of those with multiple
+            # single_producing_constituents = []
+            # multiple_producing_constituents = []
+            # for constituent in self.constituents:
+            #     reaction_producing_element = self.reaction_producting_element(constituent['element'])
+            #     if reaction_producing_element.products[0]['amount'] == 1:
+            #         single_producing_constituents.append(constituent)
+            #     else:
+            #         multiple_producing_constituents.append(constituent)
+            #
+            # all_multiple_producing_constituents_are_ore_derived = all(constituent['element'] in self.ore_sourced_elements for constituent in multiple_producing_constituents)
+            # # extracting constituents
+            # if single_producing_constituents.__len__() > 0 and multiple_producing_constituents.__len__() > 0 and not all_multiple_producing_constituents_are_ore_derived:
+            #     new_constituents += single_producing_constituents
+            #     for constituent in multiple_producing_constituents:
+            #         new_constituents += self.constituents_of(constituent)
+            # else:
+            #     for constituent in self.constituents:
+            #         new_constituents += self.constituents_of(constituent)
+
             for constituent in self.constituents:
                 new_constituents += self.constituents_of(constituent)
 
@@ -96,7 +113,7 @@ class Reactor:
         if element in self.ore_sourced_elements:
             return [constituent]
 
-        reaction_producing_element = copy.deepcopy(next(reaction for reaction in self.reactions if reaction.products[0]['element'] == element))
+        reaction_producing_element = self.reaction_producting_element(element)
 
         times_to_run_reaction = self.times_to_run_reaction(reaction_producing_element, amount)
 
@@ -128,6 +145,11 @@ class Reactor:
             times_to_run_reaction += 1
         return times_to_run_reaction
 
+    def reaction_producting_element(self, element):
+        reaction = copy.deepcopy(
+            next(reaction for reaction in self.reactions if reaction.products[0]['element'] == element)
+        )
+        return reaction
 
 reactor = Reactor(input)
 reactor
