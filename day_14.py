@@ -2,18 +2,15 @@ import re
 import copy
 
 input = """
-2 VPVL, 7 FWMGM, 2 CXFTF, 11 MNCFX => 1 STKFG
-17 NVRVD, 3 JNWZP => 8 VPVL
-53 STKFG, 6 MNCFX, 46 VJHF, 81 HVMC, 68 CXFTF, 25 GNMV => 1 FUEL
-22 VJHF, 37 MNCFX => 5 FWMGM
-139 ORE => 4 NVRVD
-144 ORE => 7 JNWZP
-5 MNCFX, 7 RFSQX, 2 FWMGM, 2 VPVL, 19 CXFTF => 3 HVMC
-5 VJHF, 7 MNCFX, 9 VPVL, 37 CXFTF => 6 GNMV
-145 ORE => 6 MNCFX
-1 NVRVD => 8 CXFTF
-1 VJHF, 6 MNCFX => 4 RFSQX
-176 ORE => 6 VJHF
+157 ORE => 5 NZVS
+165 ORE => 6 DCFZ
+44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => 1 FUEL
+12 HKGWZ, 1 GPVTF, 8 PSHF => 9 QDVJ
+179 ORE => 7 PSHF
+177 ORE => 5 HKGWZ
+7 DCFZ, 7 PSHF => 2 XJWVT
+165 ORE => 2 GPVTF
+3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT
 """
 
 class Reaction:
@@ -47,6 +44,20 @@ class Reactor:
         self.reaction_map = reaction_map
         self.reactions = []
         self.build_reaction_library()
+        self.build_distance_lookup()
+
+    def build_distance_lookup(self):
+        self.distance = {'ORE': 0}
+
+        while len(self.distance) < len(self.reactions):
+            for reaction in self.reactions:
+                material = reaction.products[0]['element']
+                if material in self.distance:
+                    continue
+                if not all([i in self.distance for i in list(map(lambda x: x['element'], reaction.reactants))]):
+                    continue
+                all_reactant_elements = list(map(lambda x: x['element'], reaction.reactants))
+                self.distance[material] = max([self.distance[i] for i in all_reactant_elements]) + 1
 
     def build_reaction_library(self):
         search_results = re.findall("(.*)\n", self.reaction_map)
@@ -54,43 +65,36 @@ class Reactor:
         for reaction_string in reaction_strings:
             self.reactions.append(Reaction(reaction_string))
 
-    def calculate_input_ore(self):
+    def calculate_max_fuel(self, ore_target):
+        one_unit = self.calculate_input_ore(1)
+        target = ore_target // one_unit
+        used_ore = self.calculate_input_ore(target)
+        while True:
+            target += (ore_target - used_ore) // one_unit + 1
+            used_ore = self.calculate_input_ore(target)
+            if used_ore > ore_target:
+                break
+        return target - 1
+
+    def calculate_input_ore(self, amount_of_fuel):
         fuel_producing_reaction = next(reaction for reaction in self.reactions if reaction.products[0]['element'] == 'FUEL')
+        times_to_run_fuel_reaction = self.times_to_run_reaction(fuel_producing_reaction, amount_of_fuel)
         self.ore_sourced_reactions = [reaction for reaction in self.reactions if reaction.reactants[0]['element'] == 'ORE']
         self.ore_sourced_elements = list(map(lambda x: x.products[0]['element'], self.ore_sourced_reactions))
 
         # initialize the constituents, these will be refined down into respective reactants
-        self.constituents = fuel_producing_reaction.reactants
+        scaled_fuel_producing_constituents = list(map(lambda x: {'element': x['element'], 'amount': x['amount'] * times_to_run_fuel_reaction}, copy.deepcopy(fuel_producing_reaction.reactants)))
+        self.constituents = scaled_fuel_producing_constituents
 
         # Refine until finding all constituents that are directly sourced from fuel
         while True:
             new_constituents = []
 
-            # check if there are constituents w/ both sourcing reactions that produce 1 AND others that produce multiple
-            # if this is the case, only derive constituents of those with multiple
-            # single_producing_constituents = []
-            # multiple_producing_constituents = []
-            # for constituent in self.constituents:
-            #     reaction_producing_element = self.reaction_producting_element(constituent['element'])
-            #     if reaction_producing_element.products[0]['amount'] == 1:
-            #         single_producing_constituents.append(constituent)
-            #     else:
-            #         multiple_producing_constituents.append(constituent)
-            #
-            # all_multiple_producing_constituents_are_ore_derived = all(constituent['element'] in self.ore_sourced_elements for constituent in multiple_producing_constituents)
-            # # extracting constituents
-            # if single_producing_constituents.__len__() > 0 and multiple_producing_constituents.__len__() > 0 and not all_multiple_producing_constituents_are_ore_derived:
-            #     new_constituents += single_producing_constituents
-            #     for constituent in multiple_producing_constituents:
-            #         new_constituents += self.constituents_of(constituent)
-            # else:
-            #     for constituent in self.constituents:
-            #         new_constituents += self.constituents_of(constituent)
-
-            for constituent in self.constituents:
-                new_constituents += self.constituents_of(constituent)
-
-            self.constituents = copy.deepcopy(new_constituents)
+            constituent_elements = list(map(lambda x: x['element'], self.constituents))
+            constituent_element_to_extract = max(constituent_elements, key=lambda x: self.distance[x])
+            constituent_to_extract = next(constituent for constituent in self.constituents if constituent['element'] == constituent_element_to_extract)
+            del self.constituents[self.constituents.index(constituent_to_extract)]
+            self.constituents += self.constituents_of(constituent_to_extract)
             self.combine_like_constituents()
 
             if self.no_non_ore_sourced_constituents():
@@ -153,4 +157,5 @@ class Reactor:
 
 reactor = Reactor(input)
 reactor
-print(reactor.calculate_input_ore())
+print(reactor.calculate_input_ore(1))
+print(reactor.calculate_max_fuel(1000000000000))
