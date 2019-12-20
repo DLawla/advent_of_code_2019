@@ -402,23 +402,34 @@ class Robot:
 class OxygenMapper:
     def __init__(self, location, oxygen_system_coordinates):
         self.locations = location
-        self.oxygen_system_coordinates = oxygen_system_coordinates
+        x, y = oxygen_system_coordinates.replace('[', '').replace(']', '').split(', ')
+        self.oxygen_system_coordinates = [int(x), int(y)]
 
     def fill_time(self):
-        filled_locations = []
-        filling_locations = [self.oxygen_system_coordinates]
+        self.filled_locations = []
+        self.filling_locations = [self.oxygen_system_coordinates]
         time = 0
-        while filling_locations.__len__() != 0:
-            filled_locations.append(filling_locations)
-            just_filled_locations = filling_locations.copy()
-            filling_locations = []
-            for filling_location in just_filled_locations:
-                filling_locations += self.adjacent_empty_locations(filling_location)
+        while self.filling_locations.__len__() != 0:
+            self.filled_locations += self.filling_locations
+            new_filling_locations = []
+            for filling_location in self.filling_locations:
+                new_filling_locations += self.adjacent_empty_locations(filling_location)
+            self.filling_locations = new_filling_locations
             time += 1
-        return time
+        return time - 1
 
-    def adjacent_empty_locations(self):
-        # continue here
+    def adjacent_empty_locations(self, location):
+        x = location[0]
+        y = location[1]
+        adjacent_locations = [[x + 1, y],
+                              [x - 1, y],
+                              [x, y + 1],
+                              [x, y - 1]]
+        adjacent_empty_locations = [location for location in adjacent_locations
+                                    if location in self.locations
+                                    and location not in self.filled_locations
+                                    and location not in self.filling_locations]
+        return adjacent_empty_locations
 
 
 # part 1
@@ -428,7 +439,7 @@ class OxygenMapper:
 # part 2
 robot = Robot(program)
 robot.chart_full_map()
-locations = list(robot.locations.keys())
+locations = robot.visited_locations
 oxygen_system_location = [key for key in robot.locations.keys() if robot.locations[key] == Robot.OXYGEN_SYSTEM][0]
 calculator = OxygenMapper(locations, oxygen_system_location)
-calculator.fill_time()
+print(calculator.fill_time())
