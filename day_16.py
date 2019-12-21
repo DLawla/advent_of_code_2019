@@ -13,26 +13,6 @@ def fft(input, patterns):
     phase_outputs = [int(list(str(element_sum))[-1]) for element_sum in element_sums]
     return np.array([phase_outputs])
 
-def part2_fft(input):
-    # sums = []
-    # for i in range(input.size):
-    #     sums.append(np.array(input[(i + 1):]).sum() - np.array(input[:i]).sum())
-    #     if (i % 10000 == 0):
-    #         print(i)
-
-    # element_sums = []
-    # for i in len(8):
-    #     element_sums
-
-
-    # subtract the values at the index and belowelement_sums.append(np.repeat(input, input.size, axis=0))
-    # sums_after_pattern = []
-    # for i in range(8):
-    #     sums_after_pattern.append(element_sums[i] - sum(element_sums[0:i+1]))
-    # # only extract ones digit of each sum
-    # phase_outputs = [int(list(str(element_sum))[-1]) for element_sum in sums_after_pattern]
-    # return np.array([phase_outputs])
-
 def build_patterns(pattern, length):
     return [build_pattern(pattern, i, length) for i in range(length)]
 
@@ -66,29 +46,21 @@ def build_pattern(pattern, i, length):
 # 2) we are repeating an input signal, and because we are calculating a the sum of the current array (minus the i +1 first elements)
 # you could do something w/ that
 # b/c so many 0e.g. on index 0 of len 4 array: [0, 1, 1, 1] would be multiplied
-input = input * 10_000
-listed_input = list(input)
-read_offset = int(''.join(listed_input[0:7]))
 
-listed_input = listed_input[read_offset:]
+# Copied from zedrdave on Reddit
 
-print('building part 2')
-listed_input = np.array(list(map(lambda x: int(x), listed_input)))
-patterns = []
-list_length = listed_input.size
-patterns = []
+skip = int(input[0:7])
+digits = [int(i) for i in input] * 10000
 
-# e.g. on index 0 of len 4 array: [0, 1, 1, 1]
-# for i in range(list_length):
-#     patterns.append([0] * (i + 1) + [1] * (list_length - 1))
+# confirm that only the first 2 elements of the pattern will be used:
+assert(len(digits) < 2*skip - 1)
 
-patterns = np.array(patterns)
-current_signal = listed_input
+for phase in range(100):
+    checksum = sum(digits[skip:])
+    new_digits = [0]*skip + [int(str(checksum)[-1])]
+    for n in range(skip+2, len(digits)+1):
+        checksum -= digits[n-2]
+        new_digits += [int(str(checksum)[-1])]
+    digits = new_digits
 
-print('starting calulations')
-for i in range(100):
-    current_signal = part2_fft(current_signal)
-    print(i)
-    print(current_signal)
-print(f'Final full signal: {current_signal}')
-print(f'Message: {list(current_signal)[0 : 8]}')
+print("Part 2 - ", ''.join(str(i) for i in digits[skip:(skip+8)]))
